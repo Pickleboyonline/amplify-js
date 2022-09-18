@@ -1557,7 +1557,7 @@ export class AuthClass {
 		);
 	}
 
-	private async cleanUpInvalidSession(user: CognitoUser) {
+	private async cleanUpInvalidSession(user: CognitoUser, reason?: any) {
 		user.signOut();
 		this.user = null;
 		try {
@@ -1570,7 +1570,11 @@ export class AuthClass {
 				this.oAuthSignOutRedirect(res, rej);
 			});
 		} else {
-			dispatchAuthEvent('signOut', this.user, `A user has been signed out`);
+			dispatchAuthEvent(
+				'signOut',
+				{ ...this.user, reason },
+				`A user has been signed out`
+			);
 		}
 	}
 
@@ -1637,7 +1641,7 @@ export class AuthClass {
 								logger.debug('Failed to get the user session', err);
 								if (this.isSessionInvalid(err)) {
 									try {
-										await this.cleanUpInvalidSession(user);
+										await this.cleanUpInvalidSession(user, err);
 									} catch (cleanUpError) {
 										rej(
 											new Error(
@@ -1669,7 +1673,7 @@ export class AuthClass {
 											logger.debug('getting user data failed', err);
 											if (this.isSessionInvalid(err)) {
 												try {
-													await this.cleanUpInvalidSession(user);
+													await this.cleanUpInvalidSession(user, err);
 												} catch (cleanUpError) {
 													rej(
 														new Error(
@@ -1835,7 +1839,7 @@ export class AuthClass {
 						logger.debug('Failed to get the session from user', user);
 						if (this.isSessionInvalid(err)) {
 							try {
-								await this.cleanUpInvalidSession(user);
+								await this.cleanUpInvalidSession(user, err);
 							} catch (cleanUpError) {
 								rej(
 									new Error(
@@ -2011,7 +2015,7 @@ export class AuthClass {
 							logger.debug('failed to get the user session', err);
 							if (this.isSessionInvalid(err)) {
 								try {
-									await this.cleanUpInvalidSession(user);
+									await this.cleanUpInvalidSession(user, err);
 								} catch (cleanUpError) {
 									rej(
 										new Error(
@@ -2107,7 +2111,11 @@ export class AuthClass {
 		 * This is why we need a well structured session object that can be inspected
 		 * and information passed back in the message below for Hub dispatch
 		 */
-		dispatchAuthEvent('signOut', this.user, `A user has been signed out`);
+		dispatchAuthEvent(
+			'signOut',
+			{ ...this.user, reason: new Error('Invoked Auth.signOut()') },
+			`A user has been signed out`
+		);
 		this.user = null;
 	}
 
